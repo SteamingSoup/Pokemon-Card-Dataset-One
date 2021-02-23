@@ -1,1 +1,47 @@
+from bs4 import BeautifulSoup
+import requests
+import numpy as np
+from time import sleep
+from random import randint
+from pandas import DataFrame
 
+response = requests.get('https://shop.tcgplayer.com/price-guide/pokemon/swsh04-vivid-voltage')
+
+soup = BeautifulSoup(response.text, 'html.parser')
+
+drop_down = soup.find('select', {'class': "priceGuideDropDown", "id": "set"}).findAll('option')
+
+pages = [i.get("value") for i in drop_down]
+
+data = []
+
+for page in pages:
+
+    page = requests.get("https://shop.tcgplayer.com/price-guide/pokemon/" + str(page))
+
+    soup2 = BeautifulSoup(page.text, 'html.parser')
+
+    right_table = soup2.find("table", attrs={"class": "priceGuideTable tablesorter"})
+
+    right_table_data = right_table.tbody.find_all("tr")[0:]
+
+    sleep(randint(2, 20))
+
+    for div in right_table_data:
+        row = ''
+        rows = div.findAll('td')
+        for row in rows:
+            if row.find(text=True):
+                data.append(row.text.strip())
+
+data_list = [data[i:i+6] for i in range(0, len(data), 6)]
+
+df = DataFrame(data_list, columns=['card_name', 'card_rarity', 'card_number', 'market_price', 'median_price', 'view'])
+
+df = df.drop(columns=['view'])
+
+df['market_price'] = df['market_price'].map(lambda x: x.lstrip('$'))
+df['median_price'] = df['median_price'].map(lambda x: x.lstrip('$'))
+
+df['market_price'] = df['market_price'].replace('—', np.NaN)
+df['median_price'] = df['median_price'].replace('—', np.NaN)
