@@ -55,3 +55,5 @@ df['median_price'] = df['median_price'].map(lambda x: x.lstrip('$'))
 
 df['market_price'] = df['market_price'].replace('—', np.NaN) # replace — with NaN numeric type
 df['median_price'] = df['median_price'].replace('—', np.NaN)
+
+df.to_csv('Pokemon_df.csv', sep=',') # export to csv
